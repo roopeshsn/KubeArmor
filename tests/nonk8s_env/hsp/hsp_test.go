@@ -16,8 +16,8 @@ var _ = Describe("HSP Systemd Mode", func() {
 			Expect(err).To(BeNil())
 
 			policyPath := "res/hsp-kubearmor-dev-file-path-audit.yaml"
-			err := SendPolicy("ADDED", policyPath)
-			Expect(err).To(BeNil())
+			err1 := SendPolicy("ADDED", policyPath)
+			Expect(err1).To(BeNil())
 
 			// try to access the /etc/passwd resource
 			out, err := ExecuteCommand([]string{"bash", "-c", "cat /etc/passwd"})
@@ -33,8 +33,8 @@ var _ = Describe("HSP Systemd Mode", func() {
 			Expect(alerts[0].Action).To(Equal("Audit"))
 
 			// deleting the policy
-			err := SendPolicy("DELETED", policyPath)
-			Expect(err).To(BeNil())
+			err2 := SendPolicy("DELETED", policyPath)
+			Expect(err2).To(BeNil())
 
 			KarmorLogStop()
 		})
@@ -47,8 +47,8 @@ var _ = Describe("HSP Systemd Mode", func() {
 			Expect(err).To(BeNil())
 
 			policyPath := "res/hsp-kubearmor-dev-proc-path-block-fromSource.yaml"
-			err := SendPolicy("ADDED", policyPath)
-			Expect(err).To(BeNil())
+			err1 := SendPolicy("ADDED", policyPath)
+			Expect(err1).To(BeNil())
 
 			// try to access the date resource
 			out, err := ExecuteCommand([]string{"bash", "-c", "date"})
@@ -64,8 +64,8 @@ var _ = Describe("HSP Systemd Mode", func() {
 			Expect(alerts[0].Action).To(Equal("Block"))
 
 			// deleting the policy
-			err := SendPolicy("DELETED", policyPath)
-			Expect(err).To(BeNil())
+			err2 := SendPolicy("DELETED", policyPath)
+			Expect(err2).To(BeNil())
 
 			KarmorLogStop()
 		})

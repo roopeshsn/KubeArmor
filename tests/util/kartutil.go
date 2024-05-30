@@ -9,12 +9,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 	"time"
+
+	apiTypes "github.com/docker/docker/api/types"
+	mobyClient "github.com/docker/docker/client"
 
 	gomegaTypes "github.com/onsi/gomega/types"
 
@@ -671,4 +675,40 @@ func ExecuteCommand(commands []string) (string, error) {
 		return string(output), err
 	}
 	return string(output), nil
+}
+
+func ExecuteCommandInContainer(containerID string, cmd []string) (string, error) {
+	client, err := mobyClient.NewClientWithOpts(mobyClient.FromEnv)
+    if err != nil {
+        return "", err
+    }
+
+    // Prepare the options for executing the command
+    execConfig := apiTypes.ExecConfig{
+        Cmd:          cmd,
+        AttachStdout: true,
+        AttachStderr: true,
+        Tty:          false,
+    }
+
+    // Execute the command in the container
+    execResp, err := client.ContainerExecCreate(context.Background(), containerID, execConfig)
+    if err != nil {
+        return "", err
+    }
+
+    // Attach to the output of the command
+    execAttachResp, err := client.ContainerExecAttach(context.Background(), execResp.ID, apiTypes.ExecStartCheck{})
+    if err != nil {
+        return "", err
+    }
+    defer execAttachResp.Close()
+
+    // Read the output of the command
+    output, err := ioutil.ReadAll(execAttachResp.Reader)
+    if err != nil {
+        return "", err
+    }
+
+    return string(output), nil
 }
