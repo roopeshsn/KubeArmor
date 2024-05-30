@@ -106,4 +106,22 @@ var _ = Describe("Systemd", func() {
 
 		})
 	})
+
+	// res/ksp-wordpress-block-config.yaml is invalid (need to debug)
+	Describe("KSP config block policy", func() {
+		It("KSP config block policy", func() {
+			resp, err := ContainerInfo()
+			Expect(err).To(BeNil())
+			Expect(resp).NotTo(BeNil())
+
+			policyPath := "res/ksp-wordpress-block-config.yaml"
+			err = SendPolicy("ADDED", policyPath)
+			Expect(err).To(BeNil())
+
+			containerName := "wordpress-mysql"
+			out, err := ExecuteCommandInContainer(containerName, []string{"bash", "-c", "cat", "/var/www/html/wp-config.php"})
+			Expect(err).To(BeNil())
+			Expect(out).NotTo(BeNil())
+		})
+	})
 })

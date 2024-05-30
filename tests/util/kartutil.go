@@ -9,13 +9,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	gomegaTypes "github.com/onsi/gomega/types"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 	"time"
+
+	apiTypes "github.com/docker/docker/api/types"
+	mobyClient "github.com/docker/docker/client"
+
+	gomegaTypes "github.com/onsi/gomega/types"
 
 	kcV1 "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/api/security.kubearmor.com/v1"
 	kcScheme "github.com/kubearmor/KubeArmor/pkg/KubeArmorController/client/clientset/versioned/scheme"
@@ -658,4 +663,52 @@ func ContainerInfo() (*pb.ProbeResponse, error) {
 		return nil, err
 	}
 	return resp, nil
+}
+
+// ExecuteCommand function executes command on the host machine
+func ExecuteCommand(commands []string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, commands[0], commands[1:]...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return string(output), err
+	}
+	return string(output), nil
+}
+
+func ExecuteCommandInContainer(containerID string, cmd []string) (string, error) {
+	client, err := mobyClient.NewClientWithOpts(mobyClient.FromEnv)
+    if err != nil {
+        return "", err
+    }
+
+    // Prepare the options for executing the command
+    execConfig := apiTypes.ExecConfig{
+        Cmd:          cmd,
+        AttachStdout: true,
+        AttachStderr: true,
+        Tty:          false,
+    }
+
+    // Execute the command in the container
+    execResp, err := client.ContainerExecCreate(context.Background(), containerID, execConfig)
+    if err != nil {
+        return "", err
+    }
+
+    // Attach to the output of the command
+    execAttachResp, err := client.ContainerExecAttach(context.Background(), execResp.ID, apiTypes.ExecStartCheck{})
+    if err != nil {
+        return "", err
+    }
+    defer execAttachResp.Close()
+
+    // Read the output of the command
+    output, err := ioutil.ReadAll(execAttachResp.Reader)
+    if err != nil {
+        return "", err
+    }
+
+    return string(output), nil
 }

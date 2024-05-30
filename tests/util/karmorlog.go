@@ -24,7 +24,7 @@ type EventResult struct {
 }
 
 var eventChan chan klog.EventInfo
-var gRPC = ""
+var gRPC = ":32767"
 
 const maxEvents = 128
 
