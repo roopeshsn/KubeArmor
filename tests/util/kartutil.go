@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	gomegaTypes "github.com/onsi/gomega/types"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -658,4 +657,16 @@ func ContainerInfo() (*pb.ProbeResponse, error) {
 		return nil, err
 	}
 	return resp, nil
+}
+
+// ExecuteCommand function executes command on the host machine
+func ExecuteCommand(commands []string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, commands[0], commands[1:]...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return string(output), err
+	}
+	return string(output), nil
 }
